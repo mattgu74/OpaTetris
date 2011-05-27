@@ -90,22 +90,22 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       cases = [{x=0 ; y=0}, {x=0 ; y=1}, {x=1 ; y=0}, {x=1; y=1}]
     },{ // L
       color = Color.rgb(250,125,125) ;
-      cases = [{x=0;y=0}, {x=0;y=1}, {x=0;y=2}, {x=1;y=2}]
+      cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=1;y=1}]
     },{ // L REVERSED
       color = Color.rgb(125,125,250) ;
-      cases = [{x=1;y=0}, {x=1;y=1}, {x=1;y=2}, {x=0;y=2}]
+      cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=-1;y=1}]
     },{ // S
       color = Color.rgb(250,250,125) ;
-      cases = [{x=0;y=0}, {x=0;y=1}, {x=1;y=1}, {x=1;y=2}]
+      cases = [{x=0;y=-1}, {x=0;y=0}, {x=1;y=0}, {x=1;y=1}]
     },{ // Z
       color = Color.rgb(125,250,250) ;
-      cases = [{x=1;y=0}, {x=1;y=1}, {x=0;y=1}, {x=0;y=2}]
+      cases = [{x=0;y=-1}, {x=0;y=0}, {x=-1;y=0}, {x=-1;y=1}]
     },{ // T
       color = Color.rgb(250,125,250) ;
-      cases = [{x=0;y=0}, {x=1;y=0}, {x=2;y=0}, {x=1;y=1}]
+      cases = [{x=-1;y=0}, {x=0;y=0}, {x=1;y=0}, {x=0;y=1}]
     },{ // |
       color = Color.rgb(125,125,125) ;
-      cases = [{x=0;y=0}, {x=0;y=1}, {x=0;y=2}, {x=0;y=3}]
+      cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=0;y=2}]
     }]
 
 ///////////////////////////////
