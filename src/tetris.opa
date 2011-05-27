@@ -142,6 +142,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
      | {right} -> object_session_right(session)
      | {left} -> object_session_left(session)
      | {rotate} -> object_session_rotate(session)
+     | {down_and_remove} -> object_session_down_and_remove(session)
 
   mySession = Cell.make(default_session, get_message)
 
@@ -233,27 +234,26 @@ Tetris(size, nbcol, nbline, speed, color) = {{
      | {some=case} -> case
      | _ -> default_case
 
-  remove_lines(session) = 
+  object_session_down_and_remove(session) = 
     is_line_complete(offset)(key, case, (line,b)) = 
       match b with
-        | 0 -> (line,b)
+        | 0 -> (line,0)
         | 1 -> match case.state with
-                   | {fixed} -> (Map.add(key, get_case_offset(get_line_offset(session.map, offset), key), line),b)
+                   | {fixed} -> (get_line_offset(session.map, offset-1),1)
                    | _ -> (get_line_offset(session.map, offset),0)
                   end
-        | _ -> (line,b)
+        | _ -> (line,0)
     
     clean_line(key, line, (map, nb)) =
-      (line, b) = Map.fold(is_line_complete(key+nb), line, (Map.empty, 1))
+      (line, b) = Map.fold(is_line_complete(key-nb), line, (Map.empty, 1))
       (Map.add(key, line, map),nb+b)
-    (map, nb) = Map.fold(clean_line,session.map,(Map.empty, 0))
+    (map, nb) = Map.rev_fold(clean_line,session.map,(Map.empty, 0))
     sess = { etat = session.etat ; 
            event = session.event ; 
-           map = session.map ; 
+           map = map ; 
            object = session.object ; 
            nextobject = session.nextobject}
-    _ = Cell.call(mySession, {session = sess })
-    void
+    object_session_down(sess : Tetris.session)
 
   //@todo detect_gameover
 
@@ -478,8 +478,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   turn_timer(ctx)() =
     now = Cell.call(mySession, {action})
     match now.etat with
-      | {started} -> _ = Cell.call(mySession, {down})
-                     do remove_lines(now)
+      | {started} -> _ = Cell.call(mySession, {down_and_remove})
                      void
       | _ -> void
 
