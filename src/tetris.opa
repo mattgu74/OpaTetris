@@ -35,6 +35,7 @@ type Tetris.object = {
 
 type Tetris.session = {
   etat : {paused} / {stopped} / {started} / {game_over} ;
+  score : int ;
   event : {none} / {event : Dom.event} ;
   map : intmap(intmap( { color : Color.color ; 
                          state : {empty} / {fixed} / {mobile} 
@@ -77,6 +78,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
   default_session = {
     etat = {stopped} ;
+    score = 0 ;
     event = {none} ;
     map = default_map ;
     object = { x=4 ; y=-10 ; object=object_get()} ;
@@ -113,14 +115,15 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 ///////////////////////////////
 
   modify_event(session:Tetris.session, event) =
-    { etat = session.etat ; event = event ; map = session.map ; object = session.object; nextobject = session.nextobject}
+    { etat = session.etat ; score = session.score ; event = event ; map = session.map ; object = session.object; nextobject = session.nextobject}
 
   modify_state(session ,state) =
-    { etat = state ; event = session.event ; map = session.map; object = session.object; nextobject = session.nextobject}   
+    { etat = state ; score = session.score ; event = session.event ; map = session.map; object = session.object; nextobject = session.nextobject}   
  
   modify_add_object(session) =
     object = object_get()
     { etat = session.etat ; 
+      score = session.score ;
       event = session.event ; 
       map = session.map ; 
       object = {x=4;y=-4;object=session.nextobject} ; 
@@ -150,7 +153,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
      | {pause} ->  a = modify_event(session, {none})
                    b = modify_state(a, {paused})
                    {return = b ; instruction = {set = b}}
-     | {down} -> object_session_down(session)
+     | {down} -> object_session_down(session : Tetris.session)
      | {right} -> object_session_right(session)
      | {left} -> object_session_left(session)
      | {rotate} -> object_session_rotate(session)
@@ -264,8 +267,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     clean_line(key, line, (map, nb)) =
       (line, b) = Map.fold(is_line_complete(key-nb), line, (Map.empty, 1))
       (Map.add(key, line, map),nb+b)
-    (map, _) = Map.rev_fold(clean_line,session.map,(Map.empty, 0))
-    sess = { etat = session.etat ; 
+    (map, n) = Map.rev_fold(clean_line,session.map,(Map.empty, 0))
+    sess = { etat = session.etat ;
+           score = session.score + n ; 
            event = session.event ; 
            map = map ; 
            object = session.object ; 
@@ -285,7 +289,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     match Map.fold(is_fixed, last_line, {false}) with
       | {false} -> void
       | {true} -> _ = Cell.call(mySession, {game_over})
-                  do Debug.jlog("Game Over")
+                  do Debug.jlog("Game Over {session.score}")
                   void
 
 
@@ -329,6 +333,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     newobject=List.fold(rotate,session.object.object.cases,List.empty)
     sess = 
        { etat = session.etat ; 
+         score = session.score ;
          event = session.event ; 
          map = session.map ; 
          object = { x=session.object.x; y=session.object.y ; object={color = session.object.object.color ; cases =newobject} } ; 
@@ -362,14 +367,16 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     nb=List.fold(check,session.object.object.cases,0)
     match nb with
      | 0 -> sess = 
-            { etat = session.etat ; 
+            { etat = session.etat ;
+              score = session.score ; 
               event = session.event ; 
               map = session.map ; 
               object = { x=session.object.x; y=session.object.y+1 ; object=session.object.object} ; 
               nextobject = session.nextobject}
             { return = sess ; instruction = {set = sess}}
      | _ -> sess =
-            { etat = session.etat ; 
+            { etat = session.etat ;
+              score = session.score ; 
               event = session.event ; 
               map = object_glued_to_map(session.object, session.map) ; 
               object = {x=4;y=-4;object=session.nextobject} ; 
@@ -405,6 +412,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       | 0 -> 
         sess = 
          { etat = session.etat ; 
+           score = session.score ;
            event = session.event ; 
            map = session.map ; 
            object = { x=session.object.x+1; y=session.object.y ; object=session.object.object} ; 
@@ -413,6 +421,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       | _ ->
         sess = 
          { etat = session.etat ; 
+           score = session.score ;
            event = session.event ; 
            map = session.map ; 
            object = { x=session.object.x; y=session.object.y ; object=session.object.object} ; 
@@ -449,6 +458,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       | 0 -> 
         sess = 
          { etat = session.etat ; 
+           score = session.score ;
            event = session.event ; 
            map = session.map ; 
            object = { x=session.object.x-1; y=session.object.y ; object=session.object.object} ; 
@@ -457,6 +467,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       | _ ->
         sess = 
          { etat = session.etat ; 
+           score = session.score ;
            event = session.event ; 
            map = session.map ; 
            object = { x=session.object.x; y=session.object.y ; object=session.object.object} ; 
@@ -508,6 +519,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   // When this function is called we must down
   turn_timer(ctx)() =
     now = Cell.call(mySession, {action})
+    do Dom.transform([#tetris_score_value <- now.score])
     match now.etat with
       | {started} -> a = Cell.call(mySession, {down_and_remove})
                      detect_gameover(a)
@@ -524,7 +536,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 //
   init(div) =
     // Prepare the canvas element
-    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas>])
+    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas><div id=#tetris_score><h2>Score : <span id=#tetris_score_value /></h2></div>])
     canvas = Canvas.get(#tetris_field)
     match canvas with
      | {none} -> Dom.transform([#info <- <>An error as occured... Sorry</>])

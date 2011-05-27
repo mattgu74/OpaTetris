@@ -9,13 +9,22 @@
  -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
  -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ height: 650px;
 }
 
 #game h1 {
- text-align: center;
+  text-align: center;
+  font-size: 45px;
+  line-height: 50px;
+  text-shadow: -3px 0 4px #222;
+  top: 0;
+  color: #EEE;
+  -webkit-mask-image: -webkit-gradient(linear, left top,
+    left bottom, from(rgba(0,0,0,0.9)), to(rgba(255,255,255,0.7)));
 }
 
 #tetris_field {
+ float: left;
  margin: 10px;
  border: 1px solid #222;
 
@@ -32,4 +41,37 @@
  -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
  -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+}
+
+#tetris_score {
+ width: 200px;
+ float: right;
+ margin: 10px;
+ border: 1px solid #222;
+
+ -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+}
+
+#tetris_score h2 {
+  font-size: 25px;
+  line-height: 30px;
+  text-shadow: -2px 0 4px #EEE;
+  top: 0;
+  color: #333;
+  -webkit-mask-image: -webkit-gradient(linear, left top,
+    left bottom, from(rgba(0,0,0,0.9)), to(rgba(255,255,255,0.7)));
+}
+
+#tetris_score_value {  
+  float: right;
+  text-align: right;
+  font-size: 25px;
+  line-height: 30px;
+  text-shadow: -2px 0 4px #EEE;
+  color: #333;
+  -webkit-mask-image: -webkit-gradient(linear, left top,
+    left bottom, from(rgba(0,0,0,0.9)), to(rgba(255,255,255,0.7)));
+  margin: auto;
 }
