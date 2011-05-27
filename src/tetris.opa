@@ -289,13 +289,12 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
 
   objet_rotate() =
-   // First implementation late in the night (not the best)
     _ = Cell.call(mySession, {rotate})
     void  
  
   object_session_rotate(session : Tetris.session) =
     rotate(~{x ; y}, acc)=
-      List.add({x=2-y;y=2-x},acc)
+      List.add({x=-1*y;y=x},acc)
     newobject=List.fold(rotate,session.object.object.cases,List.empty)
     sess = 
        { etat = session.etat ; 
