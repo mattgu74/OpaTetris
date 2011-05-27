@@ -34,7 +34,7 @@ type Tetris.object = {
 }
 
 type Tetris.session = {
-  etat : {paused} / {stopped} / {started} ;
+  etat : {paused} / {stopped} / {started} / {game_over} ;
   event : {none} / {event : Dom.event} ;
   map : intmap(intmap( { color : Color.color ; 
                          state : {empty} / {fixed} / {mobile} 
@@ -139,6 +139,8 @@ Tetris(size, nbcol, nbline, speed, color) = {{
                    a = modify_event(default_session, {none}) 
                    b = modify_state(a, {started})
                    {return = b ; instruction = {set = b}}
+     | {game_over} -> b = modify_state(session, {game_over})
+                      {return = b ; instruction = {set = b}}
      | {addobject} -> 
                       a = modify_add_object(session)
                       {return = a ; instruction = {set = a}}
@@ -168,9 +170,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     match event.kind with 
       | {keydown} -> 
         key = Option.get(event.key_code)
-        match Int.compare(key, Dom.Key.RIGHT) with
-          | {eq} -> objet_right()
-          | _ -> match Int.compare(key, Dom.Key.LEFT) with
+        match key == Dom.Key.RIGHT with
+          | {true} -> objet_right()
+          | {false} -> match Int.compare(key, Dom.Key.LEFT) with
                   | {eq} -> objet_left()
                   | _ -> match Int.compare(key, Dom.Key.DOWN) with
                           | {eq} -> objet_down()
@@ -245,7 +247,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
      | _ -> default_case
 
   object_session_down_and_remove(session) = 
-    is_line_complete(offset)(key, case, (line,b)) = 
+    is_line_complete(offset)(_, case, (line,b)) = 
       match b with
         | 0 -> (line,0)
         | 1 -> match case.state with
@@ -257,7 +259,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     clean_line(key, line, (map, nb)) =
       (line, b) = Map.fold(is_line_complete(key-nb), line, (Map.empty, 1))
       (Map.add(key, line, map),nb+b)
-    (map, nb) = Map.rev_fold(clean_line,session.map,(Map.empty, 0))
+    (map, _) = Map.rev_fold(clean_line,session.map,(Map.empty, 0))
     sess = { etat = session.etat ; 
            event = session.event ; 
            map = map ; 
@@ -265,7 +267,21 @@ Tetris(size, nbcol, nbline, speed, color) = {{
            nextobject = session.nextobject}
     object_session_down(sess : Tetris.session)
 
-  //@todo detect_gameover
+  detect_gameover(session) =
+    last_line = get_line_offset(session.map, 0)
+    is_fixed(_, case, st) =
+      match st with
+        | {true} -> {true}
+        | {false} -> match case.state with
+                      | {fixed} -> {true}
+                      | _ -> {false}
+                     end
+       end 
+    match Map.fold(is_fixed, last_line, {false}) with
+      | {false} -> void
+      | {true} -> _ = Cell.call(mySession, {game_over})
+                  do Debug.jlog("Game Over")
+                  void
 
 
 ////////////////////////////////
@@ -360,11 +376,11 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     void
 
   object_session_right(session) =   
-    check(~{x ; y}, acc)=
+    check(~{x:int ; y:int}, acc)=
       match Int.compare(x+1+session.object.x,conf.nbcol) with
        | {eq} -> acc + 1
        | _ ->
-              rha = Map.get(session.object.y+0+y , session.map)
+              rha = Map.get(session.object.y+y , session.map)
               match rha with
                | {some = zoui} -> 
                  w = Map.get(x+1+session.object.x,zoui)
@@ -487,8 +503,8 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   turn_timer(ctx)() =
     now = Cell.call(mySession, {action})
     match now.etat with
-      | {started} -> _ = Cell.call(mySession, {down_and_remove})
-                     void
+      | {started} -> a = Cell.call(mySession, {down_and_remove})
+                     detect_gameover(a)
       | _ -> void
 
 
