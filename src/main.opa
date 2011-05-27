@@ -15,9 +15,12 @@ conf()=
     conf()
 
 start()=
-  <h1>M@ttgu74 - OpaTetris</>
-  <div id=#load onclick={_ -> Load()}>Load</>
-  <div id=#game />
+  <div id=#game >
+    <h1>M@ttgu74 - OpaTetris</>
+    <div id=#info onready={_ -> Load()}>Load</>
+  </>
+
+
 server = Server.one_page_bundle("M@ttgu74 - Game - Tetris",
        [@static_resource_directory("resources")],
-       ["resources/css.css"], start)
+       ["resources/resources.css"], start)

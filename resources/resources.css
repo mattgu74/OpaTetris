@@ -1,0 +1,35 @@
+#game {
+ padding: 10px;
+ width: 500px;
+ margin-right: auto;
+ margin-left: auto;
+ background-image: -moz-linear-gradient(top, #aaaaaa, #dddddd);
+ background-image: -webkit-gradient(linear, left top, left bottom, from(#aaa), to(#ddd));
+
+ -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+}
+
+#game h1 {
+ text-align: center;
+}
+
+#tetris_field {
+ margin: 10px;
+ border: 1px solid #222;
+
+ -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+}
+
+#tetris_info {
+ float: right;
+ margin: 10px;
+ border: 1px solid #222;
+
+ -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+ box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+}
