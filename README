@@ -1,0 +1,24 @@
+== An OpaTetris Game ==
+
+@author Matthieu Guffroy
+
+BUILDING
+ opa src/tetris.opa src/main.opa -o main.exe
+
+
+LAUNCHING
+ ./main.exe
+(launches on port 8080)
+
+or
+ ./main.exe --server-port nnnn
+
+
+
+TODO LIST :
+* Detect gameover
+* Best_score
+* display next object
+
+FUTURE :
+* Multiplayer (maybe a tetrinet like :) )
