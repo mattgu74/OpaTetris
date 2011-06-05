@@ -1,1 +1,6 @@
 main.exe
+_build
+_tracks
+*.opx
+*.opx.broken
+
