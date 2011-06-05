@@ -3,7 +3,7 @@
 @author Matthieu Guffroy
 
 BUILDING
- opa src/tetris.opa src/main.opa -o main.exe
+ make
 
 
 LAUNCHING
