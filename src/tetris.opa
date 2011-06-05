@@ -33,15 +33,23 @@ type Tetris.object = {
   cases : list({x:int ; y:int})
 }
 
+type Tetris.keyboard_configuration = {
+  move_right : Dom.key_code
+  move_down  : Dom.key_code
+  move_left  : Dom.key_code
+  rotate     : Dom.key_code
+}
+
 type Tetris.session = {
   etat : {paused} / {stopped} / {started} / {game_over} ;
   score : int ;
   event : {none} / {event : Dom.event} ;
-  map : intmap(intmap( { color : Color.color ; 
-                         state : {empty} / {fixed} / {mobile} 
+  map : intmap(intmap( { color : Color.color ;
+                         state : {empty} / {fixed} / {mobile}
                         })) ;
   object : {x : int ; y : int; object : Tetris.object} ;
-  nextobject : Tetris.object
+  nextobject : Tetris.object ;
+  kb_conf : Tetris.keyboard_configuration ;
 }
 
 Tetris(size, nbcol, nbline, speed, color) = {{
@@ -61,6 +69,13 @@ Tetris(size, nbcol, nbline, speed, color) = {{
            origspeed = speed ;
            bgcolor = color
          }
+  kb_conf_default = {
+           move_right = Dom.Key.RIGHT
+           move_down = Dom.Key.DOWN
+           move_left = Dom.Key.LEFT
+           rotate = Dom.Key.UP
+  }
+
 
 //////////////////////////////////
 // DEFAULT VALUE
@@ -83,6 +98,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     map = default_map ;
     object = { x=4 ; y=-10 ; object=object_get()} ;
     nextobject = object_get()
+    kb_conf = kb_conf_default
   } : Tetris.session
 
   // List of objects
@@ -115,36 +131,36 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 ///////////////////////////////
 
   modify_event(session:Tetris.session, event) =
-    { etat = session.etat ; score = session.score ; event = event ; map = session.map ; object = session.object; nextobject = session.nextobject}
+    {session with event = event}
 
   modify_state(session ,state) =
-    { etat = state ; score = session.score ; event = session.event ; map = session.map; object = session.object; nextobject = session.nextobject}   
- 
+    {session with etat = state}
+
   modify_add_object(session) =
     object = object_get()
-    { etat = session.etat ; 
-      score = session.score ;
-      event = session.event ; 
-      map = session.map ; 
-      object = {x=4;y=-4;object=session.nextobject} ; 
-      nextobject = object}
+    { session with
+          object = { x=4
+                     y=-4
+                     object=session.nextobject
+                   }
+    }
 
   get_message(session : Tetris.session, message) =
-    match message with 
+    match message with
      | {session = m} -> {return = m ; instruction = {set = m}}
      | {event = e} -> a = modify_event(session,{event = e})
                       {return = a ; instruction = {set = a}}
      | {timer} -> a = modify_event(session, {none})
-                  {return = session ; instruction = {set = a}}     
+                  {return = session ; instruction = {set = a}}
      | {action} -> {return = session ; instruction = {unchanged}}
      // We take the default session, in order to have a clean map
-     | {start} -> 
-                   a = modify_event(default_session, {none}) 
+     | {start} ->
+                   a = modify_event(default_session, {none})
                    b = modify_state(a, {started})
                    {return = b ; instruction = {set = b}}
      | {game_over} -> b = modify_state(session, {game_over})
                       {return = b ; instruction = {set = b}}
-     | {addobject} -> 
+     | {addobject} ->
                       a = modify_add_object(session)
                       {return = a ; instruction = {set = a}}
      | {stop} ->  a = modify_event(session, {none})
@@ -169,24 +185,27 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     _ = Cell.call(mySession, {event = event})
     void
 
-  do_event(event) = 
-    match event.kind with 
-      | {keydown} -> 
+  do_event(session, event) =
+    match event.kind with
+    | {keydown} ->
         key = Option.get(event.key_code)
-        match key == Dom.Key.RIGHT with
-          | {true} -> objet_right()
-          | {false} -> match Int.compare(key, Dom.Key.LEFT) with
-                  | {eq} -> objet_left()
-                  | _ -> match Int.compare(key, Dom.Key.DOWN) with
-                          | {eq} -> objet_down()
-                          | _ -> match Int.compare(key, Dom.Key.UP) with
-                                  | {eq} -> objet_rotate()
-                                  | _ -> void
-                                 end
-                          end
-                 end
-          end
-      | _ -> void
+        match key == session.kb_conf.move_right with
+        | {true} -> objet_right()
+        | {false} ->
+            match Int.compare(key, session.kb_conf.move_left) with
+            | {eq} -> objet_left()
+            | _ ->
+                match Int.compare(key, session.kb_conf.move_down) with
+                | {eq} -> objet_down()
+                | _ ->
+                    match Int.compare(key, session.kb_conf.rotate) with
+                    | {eq} -> objet_rotate()
+                    | _ -> void
+                    end
+                end
+            end
+        end
+    | _ -> void
 
 
 ////////////////////////////////
@@ -202,10 +221,10 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   draw_map(ctx, map) =
     do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
     func(y,xmap,_) = Map.fold((x,case,_ -> draw_case(ctx, x,y,case.color)), xmap, void)
-    do Map.fold(func, map, void)  
+    do Map.fold(func, map, void)
     void
 
-  draw_vertical_lines(ctx, i) =   
+  draw_vertical_lines(ctx, i) =
     do Canvas.begin_path(ctx)
     do Canvas.move_to(ctx, i*conf.size, 0)
     do Canvas.line_to(ctx, i*conf.size, conf.height)
@@ -226,14 +245,14 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       | _ -> draw_horizontal_lines(ctx, i-1)
 
   // Draw lines of the grid
-  draw_grid(ctx) =   
+  draw_grid(ctx) =
     do Canvas.set_stroke_style(ctx, {color = Color.rgb(100,100,100)})
     do Canvas.set_line_width(ctx,0.5)
     do draw_vertical_lines(ctx, conf.nbcol-1)
     draw_horizontal_lines(ctx, conf.nbline-1)
 
   //Draw the next object in other canvas
-  draw_next(ctx, object) =     
+  draw_next(ctx, object) =
     do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
     do Canvas.set_fill_style(ctx,{color = color})
     do Canvas.fill_rect(ctx,0,0,6*conf.size, 6*conf.size)
@@ -244,18 +263,18 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 /// GRID FUNCTIONS
 ////////////////////////////////
 
-  get_line_offset(map, offset) = 
-    match Map.get(offset, map) with 
+  get_line_offset(map, offset) =
+    match Map.get(offset, map) with
       | {some=line} -> line
       | _ -> default_line
-    
+
   get_case_offset(line, offset) =
     match Map.get(offset, line)
      | {some=case} -> case
      | _ -> default_case
 
-  object_session_down_and_remove(session) = 
-    is_line_complete(offset)(_, case, (line,b)) = 
+  object_session_down_and_remove(session) =
+    is_line_complete(offset)(_, case, (line,b)) =
       match b with
         | 0 -> (line,0)
         | 1 -> match case.state with
@@ -263,17 +282,15 @@ Tetris(size, nbcol, nbline, speed, color) = {{
                    | _ -> (get_line_offset(session.map, offset),0)
                   end
         | _ -> (line,0)
-    
+
     clean_line(key, line, (map, nb)) =
       (line, b) = Map.fold(is_line_complete(key-nb), line, (Map.empty, 1))
       (Map.add(key, line, map),nb+b)
     (map, n) = Map.rev_fold(clean_line,session.map,(Map.empty, 0))
-    sess = { etat = session.etat ;
-           score = session.score + n ; 
-           event = session.event ; 
-           map = map ; 
-           object = session.object ; 
-           nextobject = session.nextobject}
+    sess = { session with
+               score = session.score + n
+               map = map ;
+           }
     object_session_down(sess : Tetris.session)
 
   detect_gameover(session) =
@@ -285,7 +302,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
                       | {fixed} -> {true}
                       | _ -> {false}
                      end
-       end 
+       end
     match Map.fold(is_fixed, last_line, {false}) with
       | {false} -> void
       | {true} -> _ = Cell.call(mySession, {game_over})
@@ -299,7 +316,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   object_get()=
     Option.get(List.get(Random.int(List.length(objects)), objects))
 
-  object_to_map(object, map, st) = 
+  object_to_map(object, map, st) =
     case_edit(y)(x, v) =
       compare(a) =
         match Int.compare(x,(a.x + object.x)) with
@@ -316,33 +333,33 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       Map.mapi(case_edit(key), value)
     Map.mapi(col_edit,map)
 
-  object_add_to_map(object, map) = 
+  object_add_to_map(object, map) =
     object_to_map(object, map, {mobile})
 
-  object_glued_to_map(object, map) = 
+  object_glued_to_map(object, map) =
     object_to_map(object, map, {fixed})
 
 
   objet_rotate() =
     _ = Cell.call(mySession, {rotate})
-    void  
- 
+    void
+
   object_session_rotate(session : Tetris.session) =
     rotate(~{x ; y}, acc)=
       List.add({x=-1*y;y=x},acc)
     newobject=List.fold(rotate,session.object.object.cases,List.empty)
-    sess = 
-       { etat = session.etat ; 
-         score = session.score ;
-         event = session.event ; 
-         map = session.map ; 
-         object = { x=session.object.x; y=session.object.y ; object={color = session.object.object.color ; cases =newobject} } ; 
-         nextobject = session.nextobject}
+    sess = { session with
+         object = { session.object with
+                        object={ color = session.object.object.color
+                                 cases =newobject
+                               }
+                  }
+           }
     {return = sess ; instruction = {set = sess}}
 
   objet_down() =
     _ = Cell.call(mySession, {down})
-    void 
+    void
 
   object_session_down(session : Tetris.session) =
     check(~{x ; y}, acc)=
@@ -351,9 +368,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
        | _ ->
               rha = Map.get(y+1+session.object.y,session.map)
               match rha with
-               | {some = zoui} -> 
+               | {some = zoui} ->
                  w = Map.get(x+session.object.x,zoui)
-                 match w with 
+                 match w with
                   | {some = s} ->
                              match s.state with
                               | {fixed} -> acc + 1
@@ -366,37 +383,35 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       end
     nb=List.fold(check,session.object.object.cases,0)
     match nb with
-     | 0 -> sess = 
-            { etat = session.etat ;
-              score = session.score ; 
-              event = session.event ; 
-              map = session.map ; 
-              object = { x=session.object.x; y=session.object.y+1 ; object=session.object.object} ; 
-              nextobject = session.nextobject}
+     | 0 -> sess =
+            { session with
+                  object = { session.object with
+                                 y = session.object.y + 1
+                           }
+            }
             { return = sess ; instruction = {set = sess}}
      | _ -> sess =
-            { etat = session.etat ;
-              score = session.score ; 
-              event = session.event ; 
-              map = object_glued_to_map(session.object, session.map) ; 
-              object = {x=4;y=-4;object=session.nextobject} ; 
-              nextobject = object_get()}
+            { session with
+                  map = object_glued_to_map(session.object, session.map) ;
+                  object = {x=4;y=-4;object=session.nextobject} ;
+                  nextobject = object_get()
+            }
             { return = sess ; instruction = {set = sess}}
 
   objet_right() =
     _ = Cell.call(mySession, {right})
     void
 
-  object_session_right(session) =   
+  object_session_right(session) =
     check(~{x:int ; y:int}, acc)=
       match Int.compare(x+1+session.object.x,conf.nbcol) with
        | {eq} -> acc + 1
        | _ ->
               rha = Map.get(session.object.y+y , session.map)
               match rha with
-               | {some = zoui} -> 
+               | {some = zoui} ->
                  w = Map.get(x+1+session.object.x,zoui)
-                 match w with 
+                 match w with
                   | {some = s} ->
                              match s.state with
                               | {fixed} -> acc + 1
@@ -408,41 +423,33 @@ Tetris(size, nbcol, nbline, speed, color) = {{
               end
       end
      nb=List.fold(check,session.object.object.cases,0)
-     match nb with 
-      | 0 -> 
-        sess = 
-         { etat = session.etat ; 
-           score = session.score ;
-           event = session.event ; 
-           map = session.map ; 
-           object = { x=session.object.x+1; y=session.object.y ; object=session.object.object} ; 
-           nextobject = session.nextobject}
+     match nb with
+      | 0 ->
+        sess =
+         { session with
+               object = { session.object with
+                           x = session.object.x + 1
+                        }
+         }
          { return = sess ; instruction = {set = sess}}
       | _ ->
-        sess = 
-         { etat = session.etat ; 
-           score = session.score ;
-           event = session.event ; 
-           map = session.map ; 
-           object = { x=session.object.x; y=session.object.y ; object=session.object.object} ; 
-           nextobject = session.nextobject}
-         { return = sess ; instruction = {set = sess}}
+         { return = session ; instruction = {set = session}}
 
 
-  objet_left() =  
+  objet_left() =
     _ = Cell.call(mySession, {left})
     void
-  
+
   object_session_left(session) =
-    check(~{x ; y}, acc)= 
+    check(~{x ; y}, acc)=
       match Int.compare(x+session.object.x,0) with
        | {eq} -> acc + 1
        | _ ->
               rha = Map.get(y+session.object.y+0,session.map)
               match rha with
-               | {some = zoui} -> 
+               | {some = zoui} ->
                  w = Map.get(x-1+session.object.x,zoui)
-                 match w with 
+                 match w with
                   | {some = s} ->
                              match s.state with
                               | {fixed} -> acc + 1
@@ -454,25 +461,17 @@ Tetris(size, nbcol, nbline, speed, color) = {{
               end
       end
      nb=List.fold(check,session.object.object.cases,0)
-     match nb with 
-      | 0 -> 
-        sess = 
-         { etat = session.etat ; 
-           score = session.score ;
-           event = session.event ; 
-           map = session.map ; 
-           object = { x=session.object.x-1; y=session.object.y ; object=session.object.object} ; 
-           nextobject = session.nextobject}
+     match nb with
+      | 0 ->
+        sess =
+         { session with
+               object = { session.object with
+                              x = session.object.x - 1
+                        }
+         }
          { return = sess ; instruction = {set = sess}}
       | _ ->
-        sess = 
-         { etat = session.etat ; 
-           score = session.score ;
-           event = session.event ; 
-           map = session.map ; 
-           object = { x=session.object.x; y=session.object.y ; object=session.object.object} ; 
-           nextobject = session.nextobject}
-         { return = sess ; instruction = {set = sess}}
+         { return = session ; instruction = {set = session}}
 
 
 ////////////////////////////////
@@ -487,10 +486,10 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     now = Cell.call(mySession, {timer})
     match now.etat with
       | {started} -> keyboard_action(now)
-      | _ -> wait_start(now) 
+      | _ -> wait_start(now)
 
    refresh_timer(ctx, ctx2)() =
-     now = Cell.call(mySession, {timer}) 
+     now = Cell.call(mySession, {timer})
      do draw_next(ctx2, now.nextobject)
      do draw_map(ctx, object_add_to_map(now.object, now.map))
      draw_grid(ctx)
@@ -500,19 +499,19 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   // Any key trigerred will resume or start the game
   wait_start(now : Tetris.session) =
     match now.event with
-      | {event = e} -> 
+      | {event = e} ->
          match e.kind with
-           | {keyup} ->  _ = Cell.call(mySession, {start}) // Indicate in the session that game is launched 
+           | {keyup} ->  _ = Cell.call(mySession, {start}) // Indicate in the session that game is launched
                          _ = Cell.call(mySession, {addobject}) // Push an object in the current session
-                         Dom.transform([#info <- <>Use arrows keys to play</>]) // How to play indication
-           | _ -> void 
+                         Dom.transform([#info <- <>Use arrow keys to play</>]) // How to play indication
+           | _ -> void
          end
       | _ -> void
 
   // In the case of the game is launched, we must do action when key are trigered
   keyboard_action(now : Tetris.session) =
-    match now.event with 
-      | {event = e} -> do_event(e)
+    match now.event with
+      | {event = e} -> do_event(now, e)
       | _ -> void
 
 
@@ -540,8 +539,8 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     canvas = Canvas.get(#tetris_field)
     match canvas with
      | {none} -> Dom.transform([#info <- <>An error as occured... Sorry</>])
-     | {some = c} -> 
-    ctx = Option.get(Canvas.get_context_2d(c)) 
+     | {some = c} ->
+    ctx = Option.get(Canvas.get_context_2d(c))
     // Prepare the key binding
     _ = Dom.bind(Dom.select_document(), {keydown}, bind_event)
     _ = Dom.bind(Dom.select_document(), {keyup}, bind_event)
