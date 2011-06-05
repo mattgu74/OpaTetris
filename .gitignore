@@ -3,4 +3,6 @@ _build
 _tracks
 *.opx
 *.opx.broken
-
+*~
+opa-debug
+*.log

@@ -16,9 +16,10 @@ or
 
 
 TODO LIST :
-* Detect gameover
 * Best_score
-* display next object
+* Add verification on rotation, 
+   sometime object can rotate outside the gamefield, 
+   or in fixed object
 
 FUTURE :
 * Multiplayer (maybe a tetrinet like :) )
