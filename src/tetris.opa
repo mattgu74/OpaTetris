@@ -169,6 +169,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
      | {pause} ->  a = modify_event(session, {none})
                    b = modify_state(a, {paused})
                    {return = b ; instruction = {set = b}}
+     | {continue} -> a = modify_event(session, {none})
+                     b = modify_state(a, {started})
+                     {return = b ; instruction = {set = b}}
      | {down} -> object_session_down(session : Tetris.session)
      | {right} -> object_session_right(session)
      | {left} -> object_session_left(session)
@@ -186,25 +189,13 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     void
 
   do_event(session, event) =
-    match event.kind with
-    | {keydown} ->
-        key = Option.get(event.key_code)
-        match key == session.kb_conf.move_right with
-        | {true} -> objet_right()
-        | {false} ->
-            match Int.compare(key, session.kb_conf.move_left) with
-            | {eq} -> objet_left()
-            | _ ->
-                match Int.compare(key, session.kb_conf.move_down) with
-                | {eq} -> objet_down()
-                | _ ->
-                    match Int.compare(key, session.kb_conf.rotate) with
-                    | {eq} -> objet_rotate()
-                    | _ -> void
-                    end
-                end
-            end
-        end
+    match (event.kind, event.key_code) with
+    | ({keydown}, {some=key}) ->
+        if key == session.kb_conf.move_right     then objet_right()
+        else if key == session.kb_conf.move_left then objet_left()
+        else if key == session.kb_conf.move_down then objet_down()
+        else if key == session.kb_conf.rotate    then objet_rotate()
+        else void
     | _ -> void
 
 
@@ -508,12 +499,11 @@ Tetris(size, nbcol, nbline, speed, color) = {{
          end
       | _ -> void
 
-  // In the case of the game is launched, we must do action when key are trigered
+  // In the case of the game is launched, we must do action when key are triggered
   keyboard_action(now : Tetris.session) =
     match now.event with
       | {event = e} -> do_event(now, e)
-      | _ -> void
-
+      | {none} -> void
 
   // When this function is called we must down
   turn_timer(ctx)() =
@@ -524,8 +514,12 @@ Tetris(size, nbcol, nbline, speed, color) = {{
                      detect_gameover(a)
       | _ -> void
 
-
-
+  switch_pause() =
+    now = Cell.call(mySession, {action})
+    match now.etat with
+    | {paused}  -> _= Cell.call(mySession, {continue}) void
+    | {started} -> _= Cell.call(mySession, {pause}) void
+    | _ -> void
 
 ////////////////////////////////
 // INIT
@@ -535,7 +529,12 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 //
   init(div) =
     // Prepare the canvas element
-    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas><div id=#tetris_score><h2>Score : <span id=#tetris_score_value /></h2></div>])
+    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas><div id=#tetris_score><h2>Score : <span id=#tetris_score_value /></h2></div>
+<div id=#control_div>
+     <span><h2>Control Panel</h2></span>
+     <button type=button id=#pause_button onclick={_-> switch_pause()}> PAUSE </button>
+</div>
+])
     canvas = Canvas.get(#tetris_field)
     match canvas with
      | {none} -> Dom.transform([#info <- <>An error as occured... Sorry</>])
