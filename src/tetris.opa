@@ -200,57 +200,6 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
 
 ////////////////////////////////
-// DRAWING
-////////////////////////////////
-
-  draw_case(ctx,x,y,color) =
-    do Canvas.set_fill_style(ctx,{color = color})
-    do Canvas.fill_rect(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
-    void
-
-  // Draw the map of square
-  draw_map(ctx, map) =
-    do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
-    func(y,xmap,_) = Map.fold((x,case,_ -> draw_case(ctx, x,y,case.color)), xmap, void)
-    do Map.fold(func, map, void)
-    void
-
-  draw_vertical_lines(ctx, i) =
-    do Canvas.begin_path(ctx)
-    do Canvas.move_to(ctx, i*conf.size, 0)
-    do Canvas.line_to(ctx, i*conf.size, conf.height)
-    do Canvas.stroke(ctx)
-    do Canvas.close_path(ctx)
-    match i with
-      | 1 -> void
-      | _ -> draw_vertical_lines(ctx, i-1)
-
-  draw_horizontal_lines(ctx, i) =
-    do Canvas.begin_path(ctx)
-    do Canvas.move_to(ctx, 0, i*conf.size)
-    do Canvas.line_to(ctx, conf.width, i*conf.size)
-    do Canvas.stroke(ctx)
-    do Canvas.close_path(ctx)
-    match i with
-      | 1 -> void
-      | _ -> draw_horizontal_lines(ctx, i-1)
-
-  // Draw lines of the grid
-  draw_grid(ctx) =
-    do Canvas.set_stroke_style(ctx, {color = Color.rgb(100,100,100)})
-    do Canvas.set_line_width(ctx,0.5)
-    do draw_vertical_lines(ctx, conf.nbcol-1)
-    draw_horizontal_lines(ctx, conf.nbline-1)
-
-  //Draw the next object in other canvas
-  draw_next(ctx, object) =
-    do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
-    do Canvas.set_fill_style(ctx,{color = color})
-    do Canvas.fill_rect(ctx,0,0,6*conf.size, 6*conf.size)
-    do List.fold( (case, _ -> draw_case(ctx, case.x+2, case.y+2,object.color)) , object.cases, void)
-    draw_grid(ctx)
-
-////////////////////////////////
 /// GRID FUNCTIONS
 ////////////////////////////////
 
@@ -481,9 +430,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
    refresh_timer(ctx, ctx2)() =
      now = Cell.call(mySession, {timer})
-     do draw_next(ctx2, now.nextobject)
-     do draw_map(ctx, object_add_to_map(now.object, now.map))
-     draw_grid(ctx)
+     do TetrisCanevas.draw_next(conf, color, ctx2, now.nextobject)
+     do TetrisCanevas.draw_map(conf, ctx, object_add_to_map(now.object, now.map))
+     TetrisCanevas.draw_grid(conf, ctx)
 
 
   // In the case of the game is stopped or paused
@@ -555,4 +504,55 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     // Show we are ready to play
     Dom.transform([#info <- <>Press a touch to start</>])
 
+}}
+
+TetrisCanevas = {{
+
+  draw_case(conf, ctx, x, y, color) =
+    do Canvas.set_fill_style(ctx,{color = color})
+    do Canvas.fill_rect(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
+    void
+
+  // Draw the map of square
+  draw_map(conf, ctx, map) =
+    do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
+    func(y,xmap,_) =
+            Map.fold((x,case,_ -> draw_case(conf, ctx, x,y,case.color)), xmap, void)
+    do Map.fold(func, map, void)
+    void
+
+  draw_vertical_lines(conf, ctx, i) =
+    do Canvas.begin_path(ctx)
+    do Canvas.move_to(ctx, i*conf.size, 0)
+    do Canvas.line_to(ctx, i*conf.size, conf.height)
+    do Canvas.stroke(ctx)
+    do Canvas.close_path(ctx)
+    match i with
+      | 1 -> void
+      | _ -> draw_vertical_lines(conf, ctx, i-1)
+
+  draw_horizontal_lines(conf, ctx, i) =
+    do Canvas.begin_path(ctx)
+    do Canvas.move_to(ctx, 0, i*conf.size)
+    do Canvas.line_to(ctx, conf.width, i*conf.size)
+    do Canvas.stroke(ctx)
+    do Canvas.close_path(ctx)
+    match i with
+      | 1 -> void
+      | _ -> draw_horizontal_lines(conf, ctx, i-1)
+
+  // Draw lines of the grid
+  draw_grid(conf, ctx) =
+    do Canvas.set_stroke_style(ctx, {color = Color.rgb(100,100,100)})
+    do Canvas.set_line_width(ctx,0.5)
+    do draw_vertical_lines(conf, ctx, conf.nbcol-1)
+    draw_horizontal_lines(conf, ctx, conf.nbline-1)
+
+  //Draw the next object in other canvas
+  draw_next(conf, color, ctx, object) =
+    do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
+    do Canvas.set_fill_style(ctx,{color = color})
+    do Canvas.fill_rect(ctx,0,0,6*conf.size, 6*conf.size)
+    do List.fold( (case, _ -> draw_case(conf, ctx, case.x+2, case.y+2,object.color)) , object.cases, void)
+    draw_grid(conf, ctx)
 }}
