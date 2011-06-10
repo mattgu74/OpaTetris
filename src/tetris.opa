@@ -537,7 +537,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 ])
     canvas = Canvas.get(#tetris_field)
     match canvas with
-     | {none} -> Dom.transform([#info <- <>An error as occured... Sorry</>])
+     | {none} -> Dom.transform([#info <- <>An error has occured... Sorry</>])
      | {some = c} ->
     ctx = Option.get(Canvas.get_context_2d(c))
     // Prepare the key binding
