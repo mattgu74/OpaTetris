@@ -169,6 +169,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
      | {pause} ->  a = modify_event(session, {none})
                    b = modify_state(a, {paused})
                    {return = b ; instruction = {set = b}}
+     | {continue} -> a = modify_event(session, {none})
+                     b = modify_state(a, {started})
+                     {return = b ; instruction = {set = b}}
      | {down} -> object_session_down(session : Tetris.session)
      | {right} -> object_session_right(session)
      | {left} -> object_session_left(session)
@@ -186,78 +189,15 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     void
 
   do_event(session, event) =
-    match event.kind with
-    | {keydown} ->
-        key = Option.get(event.key_code)
-        match key == session.kb_conf.move_right with
-        | {true} -> objet_right()
-        | {false} ->
-            match Int.compare(key, session.kb_conf.move_left) with
-            | {eq} -> objet_left()
-            | _ ->
-                match Int.compare(key, session.kb_conf.move_down) with
-                | {eq} -> objet_down()
-                | _ ->
-                    match Int.compare(key, session.kb_conf.rotate) with
-                    | {eq} -> objet_rotate()
-                    | _ -> void
-                    end
-                end
-            end
-        end
+    match (event.kind, event.key_code) with
+    | ({keydown}, {some=key}) ->
+        if key == session.kb_conf.move_right     then objet_right()
+        else if key == session.kb_conf.move_left then objet_left()
+        else if key == session.kb_conf.move_down then objet_down()
+        else if key == session.kb_conf.rotate    then objet_rotate()
+        else void
     | _ -> void
 
-
-////////////////////////////////
-// DRAWING
-////////////////////////////////
-
-  draw_case(ctx,x,y,color) =
-    do Canvas.set_fill_style(ctx,{color = color})
-    do Canvas.fill_rect(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
-    void
-
-  // Draw the map of square
-  draw_map(ctx, map) =
-    do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
-    func(y,xmap,_) = Map.fold((x,case,_ -> draw_case(ctx, x,y,case.color)), xmap, void)
-    do Map.fold(func, map, void)
-    void
-
-  draw_vertical_lines(ctx, i) =
-    do Canvas.begin_path(ctx)
-    do Canvas.move_to(ctx, i*conf.size, 0)
-    do Canvas.line_to(ctx, i*conf.size, conf.height)
-    do Canvas.stroke(ctx)
-    do Canvas.close_path(ctx)
-    match i with
-      | 1 -> void
-      | _ -> draw_vertical_lines(ctx, i-1)
-
-  draw_horizontal_lines(ctx, i) =
-    do Canvas.begin_path(ctx)
-    do Canvas.move_to(ctx, 0, i*conf.size)
-    do Canvas.line_to(ctx, conf.width, i*conf.size)
-    do Canvas.stroke(ctx)
-    do Canvas.close_path(ctx)
-    match i with
-      | 1 -> void
-      | _ -> draw_horizontal_lines(ctx, i-1)
-
-  // Draw lines of the grid
-  draw_grid(ctx) =
-    do Canvas.set_stroke_style(ctx, {color = Color.rgb(100,100,100)})
-    do Canvas.set_line_width(ctx,0.5)
-    do draw_vertical_lines(ctx, conf.nbcol-1)
-    draw_horizontal_lines(ctx, conf.nbline-1)
-
-  //Draw the next object in other canvas
-  draw_next(ctx, object) =
-    do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
-    do Canvas.set_fill_style(ctx,{color = color})
-    do Canvas.fill_rect(ctx,0,0,6*conf.size, 6*conf.size)
-    do List.fold( (case, _ -> draw_case(ctx, case.x+2, case.y+2,object.color)) , object.cases, void)
-    draw_grid(ctx)
 
 ////////////////////////////////
 /// GRID FUNCTIONS
@@ -490,9 +430,9 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
    refresh_timer(ctx, ctx2)() =
      now = Cell.call(mySession, {timer})
-     do draw_next(ctx2, now.nextobject)
-     do draw_map(ctx, object_add_to_map(now.object, now.map))
-     draw_grid(ctx)
+     do TetrisCanevas.draw_next(conf, color, ctx2, now.nextobject)
+     do TetrisCanevas.draw_map(conf, ctx, object_add_to_map(now.object, now.map))
+     TetrisCanevas.draw_grid(conf, ctx)
 
 
   // In the case of the game is stopped or paused
@@ -508,12 +448,11 @@ Tetris(size, nbcol, nbline, speed, color) = {{
          end
       | _ -> void
 
-  // In the case of the game is launched, we must do action when key are trigered
+  // In the case of the game is launched, we must do action when key are triggered
   keyboard_action(now : Tetris.session) =
     match now.event with
       | {event = e} -> do_event(now, e)
-      | _ -> void
-
+      | {none} -> void
 
   // When this function is called we must down
   turn_timer(ctx)() =
@@ -524,8 +463,12 @@ Tetris(size, nbcol, nbline, speed, color) = {{
                      detect_gameover(a)
       | _ -> void
 
-
-
+  switch_pause() =
+    now = Cell.call(mySession, {action})
+    match now.etat with
+    | {paused}  -> _= Cell.call(mySession, {continue}) void
+    | {started} -> _= Cell.call(mySession, {pause}) void
+    | _ -> void
 
 ////////////////////////////////
 // INIT
@@ -535,10 +478,15 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 //
   init(div) =
     // Prepare the canvas element
-    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas><div id=#tetris_score><h2>Score : <span id=#tetris_score_value /></h2></div>])
+    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas><div id=#tetris_score><h2>Score : <span id=#tetris_score_value /></h2></div>
+<div id=#control_div>
+     <span><h2>Control Panel</h2></span>
+     <button type=button id=#pause_button onclick={_-> switch_pause()}> PAUSE </button>
+</div>
+])
     canvas = Canvas.get(#tetris_field)
     match canvas with
-     | {none} -> Dom.transform([#info <- <>An error as occured... Sorry</>])
+     | {none} -> Dom.transform([#info <- <>An error has occured... Sorry</>])
      | {some = c} ->
     ctx = Option.get(Canvas.get_context_2d(c))
     // Prepare the key binding
@@ -556,4 +504,55 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     // Show we are ready to play
     Dom.transform([#info <- <>Press a touch to start</>])
 
+}}
+
+TetrisCanevas = {{
+
+  draw_case(conf, ctx, x, y, color) =
+    do Canvas.set_fill_style(ctx,{color = color})
+    do Canvas.fill_rect(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
+    void
+
+  // Draw the map of square
+  draw_map(conf, ctx, map) =
+    do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
+    func(y,xmap,_) =
+            Map.fold((x,case,_ -> draw_case(conf, ctx, x,y,case.color)), xmap, void)
+    do Map.fold(func, map, void)
+    void
+
+  draw_vertical_lines(conf, ctx, i) =
+    do Canvas.begin_path(ctx)
+    do Canvas.move_to(ctx, i*conf.size, 0)
+    do Canvas.line_to(ctx, i*conf.size, conf.height)
+    do Canvas.stroke(ctx)
+    do Canvas.close_path(ctx)
+    match i with
+      | 1 -> void
+      | _ -> draw_vertical_lines(conf, ctx, i-1)
+
+  draw_horizontal_lines(conf, ctx, i) =
+    do Canvas.begin_path(ctx)
+    do Canvas.move_to(ctx, 0, i*conf.size)
+    do Canvas.line_to(ctx, conf.width, i*conf.size)
+    do Canvas.stroke(ctx)
+    do Canvas.close_path(ctx)
+    match i with
+      | 1 -> void
+      | _ -> draw_horizontal_lines(conf, ctx, i-1)
+
+  // Draw lines of the grid
+  draw_grid(conf, ctx) =
+    do Canvas.set_stroke_style(ctx, {color = Color.rgb(100,100,100)})
+    do Canvas.set_line_width(ctx,0.5)
+    do draw_vertical_lines(conf, ctx, conf.nbcol-1)
+    draw_horizontal_lines(conf, ctx, conf.nbline-1)
+
+  //Draw the next object in other canvas
+  draw_next(conf, color, ctx, object) =
+    do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
+    do Canvas.set_fill_style(ctx,{color = color})
+    do Canvas.fill_rect(ctx,0,0,6*conf.size, 6*conf.size)
+    do List.fold( (case, _ -> draw_case(conf, ctx, case.x+2, case.y+2,object.color)) , object.cases, void)
+    draw_grid(conf, ctx)
 }}
