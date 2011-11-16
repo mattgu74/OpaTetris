@@ -1,8 +1,10 @@
+/**
+ * @author Ida Swarczewskaja (CSS & design)
+ */
 html, body {
   margin: 0;
   padding: 0;
 }
-
 
 body {
   background:black;
@@ -27,19 +29,19 @@ body {
   box-shadow: 0px 3px 5px #333 inset;
 }
 /* Field */
-#tetris_field, .tetris_field  {
+#tetris_board, .tetris_board  {
   position: absolute;
   left: 15px;
   top:15px;
 }
-.tetris_field {
+.tetris_board {
   background: transparent;
   height: 500px;
   width: 250px;
 }
 
 /* Right panel */
-#tetris_info, #tetris_field, #tetris_score_value, .tetris_field, .tetris_info {
+#tetris_next_preview, #tetris_board, #tetris_score_value, .tetris_board, .tetris_next_preview {
   border: 1px solid #161616;
   box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5) inset, 0 1px 3px #333;
   -webkit-box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5) inset, 0 1px 3px #333;
@@ -51,7 +53,7 @@ body {
   border-bottom: 1px solid #111;
 }
 
-.logo, #tetris_info, .next, #tetris_score, #control_div, #info, .tetris_info{
+.logo, #tetris_next_preview, .next, #tetris_score, #control_div, #info, .tetris_next_preview{
   position:absolute;
   left: 285px;
 }
@@ -62,10 +64,10 @@ body {
   top:10px;
   display: block;
 }
-#tetris_info, .tetris_info {
+#tetris_next_preview, .tetris_next_preview {
   top:100px;
 }
-.tetris_info {
+.tetris_next_preview {
   background: transparent;
   height: 150px;
   width: 150px;
@@ -85,7 +87,7 @@ body {
   width: 64px;
   margin-bottom:10px;
 }
-#tetris_score_value {  
+#tetris_score_value {
   text-align: left;
   font-size: 20px;
   line-height:24px;
