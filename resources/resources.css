@@ -1,77 +1,123 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+
+body {
+  background:black;
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size:85%;
+  line-height:120%;
+  font-weight:normal;
+}
+
 #game {
- padding: 10px;
- width: 500px;
- margin-right: auto;
- margin-left: auto;
- background-image: -moz-linear-gradient(top, #aaaaaa, #dddddd);
- background-image: -webkit-gradient(linear, left top, left bottom, from(#aaa), to(#ddd));
-
- -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- height: 650px;
+  padding: 10px;
+  width: 445px;
+  position:relative;
+  margin: 15px auto;
+  background: url('opatetris-bg.jpg') repeat 0 0;
+  height: 515px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px 5px 5px 5px;
+  -webkit-box-shadow: 0px 3px 5px #333 inset;
+  -moz-box-shadow: 0px 3px 5px #333 inset;
+  box-shadow: 0px 3px 5px #333 inset;
+}
+/* Field */
+#tetris_field, .tetris_field  {
+  position: absolute;
+  left: 15px;
+  top:15px;
+}
+.tetris_field {
+  background: transparent;
+  height: 500px;
+  width: 250px;
 }
 
-#game h1 {
-  text-align: center;
-  font-size: 45px;
-  line-height: 50px;
-  text-shadow: -3px 0 4px #222;
-  top: 0;
-  color: #EEE;
-  -webkit-mask-image: -webkit-gradient(linear, left top,
-    left bottom, from(rgba(0,0,0,0.9)), to(rgba(255,255,255,0.7)));
+/* Right panel */
+#tetris_info, #tetris_field, #tetris_score_value, .tetris_field, .tetris_info {
+  border: 1px solid #161616;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5) inset, 0 1px 3px #333;
+  -webkit-box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5) inset, 0 1px 3px #333;
+  -moz-box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5) inset, 0 1px 3px #333;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px 3px 3px 3px;
+  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #111;
 }
 
-#tetris_field {
- float: left;
- margin: 10px;
- border: 1px solid #222;
-
- -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+.logo, #tetris_info, .next, #tetris_score, #control_div, #info, .tetris_info{
+  position:absolute;
+  left: 285px;
 }
-
-#tetris_info {
- float: right;
- margin: 10px;
- border: 1px solid #222;
-
- -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+.logo {
+  background: url('opatetris-sprite.png') no-repeat -3px 0px;
+  height: 44px;
+  width:173px;
+  top:10px;
+  display: block;
 }
-
+#tetris_info, .tetris_info {
+  top:100px;
+}
+.tetris_info {
+  background: transparent;
+  height: 150px;
+  width: 150px;
+}
+.next {
+  top:70px;
+  background: url('opatetris-sprite.png') no-repeat -3px -53px;
+  height: 20px;
+  width: 54px;
+}
 #tetris_score {
- width: 200px;
- float: right;
- margin: 10px;
- border: 1px solid #222;
-
- -webkit-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- -moz-box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
- box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.5);
+  top:270px;
 }
-
-#tetris_score h2 {
-  font-size: 25px;
-  line-height: 30px;
-  text-shadow: -2px 0 4px #EEE;
-  top: 0;
-  color: #333;
-  -webkit-mask-image: -webkit-gradient(linear, left top,
-    left bottom, from(rgba(0,0,0,0.9)), to(rgba(255,255,255,0.7)));
+.score {
+  background: url('opatetris-sprite.png') no-repeat -3px -80px;
+  height: 20px;
+  width: 64px;
+  margin-bottom:10px;
 }
-
 #tetris_score_value {  
-  float: right;
-  text-align: right;
-  font-size: 25px;
-  line-height: 30px;
-  text-shadow: -2px 0 4px #EEE;
-  color: #333;
-  -webkit-mask-image: -webkit-gradient(linear, left top,
-    left bottom, from(rgba(0,0,0,0.9)), to(rgba(255,255,255,0.7)));
-  margin: auto;
+  text-align: left;
+  font-size: 20px;
+  line-height:24px;
+  text-shadow: 0 -1px 1px black;
+  color: gray;
+  width: 141px;
+  padding:5px;
+  background:#1F1F1F;
+}
+#control_div {
+  bottom:15px;
+}
+
+button {
+  background: url('opatetris-sprite.png') no-repeat -3px -109px;
+  height: 40px;
+  width:164px;
+  display: block;
+  border:none;
+  color:#808080;
+  text-shadow:0 -1px 1px #000;
+  font-size:20px;
+}
+
+#info {
+  width:164px;
+  top: 440px;
+  background: rgba(0, 0, 0, 0.3);
+  color: gray;
+  padding: 5px 0;
+  text-align:center;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px 3px 3px 3px;
 }
