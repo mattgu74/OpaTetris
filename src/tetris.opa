@@ -14,6 +14,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+import stdlib.web.canvas
+
 package mattgu74.tetris
 
 type Tetris.conf = {
@@ -104,25 +106,25 @@ Tetris(size, nbcol, nbline, speed, color) = {{
   // List of objects
   objects = [
     { // CUBE
-      color = Color.rgb(125,250,125) ;
+      color = Color.rgb(236,28,36) ;
       cases = [{x=0 ; y=0}, {x=0 ; y=1}, {x=1 ; y=0}, {x=1; y=1}]
     },{ // L
-      color = Color.rgb(250,125,125) ;
+      color = Color.rgb(199,21,140) ;
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=1;y=1}]
     },{ // L REVERSED
-      color = Color.rgb(125,125,250) ;
+      color = Color.rgb(46,48,146) ;
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=-1;y=1}]
     },{ // S
-      color = Color.rgb(250,250,125) ;
+      color = Color.rgb(0,174,238) ;
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=1;y=0}, {x=1;y=1}]
     },{ // Z
-      color = Color.rgb(125,250,250) ;
+      color = Color.rgb(0,165,80) ;
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=-1;y=0}, {x=-1;y=1}]
     },{ // T
-      color = Color.rgb(250,125,250) ;
+      color = Color.rgb(255,241,0) ;
       cases = [{x=-1;y=0}, {x=0;y=0}, {x=1;y=0}, {x=0;y=1}]
     },{ // |
-      color = Color.rgb(125,125,125) ;
+      color = Color.rgb(243,117,33) ;
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=0;y=2}]
     }]
 
@@ -478,11 +480,17 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 //
   init(div) =
     // Prepare the canvas element
-    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas><div id=#tetris_score><h2>Score : <span id=#tetris_score_value /></h2></div>
-<div id=#control_div>
-     <span><h2>Control Panel</h2></span>
-     <button type=button id=#pause_button onclick={_-> switch_pause()}> PAUSE </button>
-</div>
+    do Dom.transform([{div} +<- <canvas id=#tetris_field height={conf.height} width={conf.width}>Your browser doesn't support canvas element (part of html5)</canvas><canvas id=#tetris_info height={6*conf.size} width={6*conf.size}> </canvas>
+       <div class="tetris_field"></div>
+       <div class="tetris_info"></div>
+       <div class="next"></div>
+       <div id=#tetris_score>
+            <div class="score"></div>
+            <div class="board" id=#tetris_score_value />
+       </div>
+       <div id=#control_div>
+            <button type=button id=#pause_button onclick={_-> switch_pause()}>Pause</button>
+       </div>
 ])
     canvas = Canvas.get(#tetris_field)
     match canvas with
@@ -508,14 +516,20 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
 TetrisCanevas = {{
 
+
   draw_case(conf, ctx, x, y, color) =
+//     gradient = Canvas.create_linear_gradient(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
+//     do Canvas.add_color_stop(gradient, 0., color)
+//     do Canvas.add_color_stop(gradient, 1., {color with r=0})
+//     do Canvas.set_fill_style(ctx,{gradient = gradient})
     do Canvas.set_fill_style(ctx,{color = color})
     do Canvas.fill_rect(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
     void
 
   // Draw the map of square
-  draw_map(conf, ctx, map) =
+  draw_map(conf, ctx, map) = 
     do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
+    do draw_bg(conf,conf.height, conf.width,ctx)
     func(y,xmap,_) =
             Map.fold((x,case,_ -> draw_case(conf, ctx, x,y,case.color)), xmap, void)
     do Map.fold(func, map, void)
@@ -541,10 +555,16 @@ TetrisCanevas = {{
       | 1 -> void
       | _ -> draw_horizontal_lines(conf, ctx, i-1)
 
+  // Set canvas background color
+  draw_bg(conf,height,width,ctx)=
+    do Canvas.set_fill_style(ctx, {color = conf.bgcolor})
+    do Canvas.fill_rect(ctx,0,0,width,height)
+    void
+
   // Draw lines of the grid
   draw_grid(conf, ctx) =
-    do Canvas.set_stroke_style(ctx, {color = Color.rgb(100,100,100)})
-    do Canvas.set_line_width(ctx,0.5)
+    do Canvas.set_stroke_style(ctx, {color = Color.rgb(11,11,11)})
+    do Canvas.set_line_width(ctx,0.5)   
     do draw_vertical_lines(conf, ctx, conf.nbcol-1)
     draw_horizontal_lines(conf, ctx, conf.nbline-1)
 
@@ -552,7 +572,7 @@ TetrisCanevas = {{
   draw_next(conf, color, ctx, object) =
     do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
     do Canvas.set_fill_style(ctx,{color = color})
-    do Canvas.fill_rect(ctx,0,0,6*conf.size, 6*conf.size)
+    do draw_bg(conf,6*conf.size, 6*conf.size,ctx)
     do List.fold( (case, _ -> draw_case(conf, ctx, case.x+2, case.y+2,object.color)) , object.cases, void)
     draw_grid(conf, ctx)
 }}

@@ -8,7 +8,7 @@
 import mattgu74.tetris
 
 conf()=
- myTetris = Tetris(25, 10, 20, 250, Color.rgb(255,255,255))
+ myTetris = Tetris(25, 10, 20, 250, Color.rgb(31,31,31))
  myTetris.init(#game)
 
 @client Load()=
@@ -16,7 +16,7 @@ conf()=
 
 start()=
   <div id=#game >
-    <h1>M@ttgu74 - OpaTetris</>
+    <div class="logo"></div>
     <div id=#info onready={_ -> Load()}>Load</>
   </>
 
