@@ -4,6 +4,7 @@
  * @author Matthieu Guffroy
  * @author Adam Koprowski (improving control logic & session management;
  *                         no more lost key events)
+ * @author Ida Swarczewskaja (improving html structure)
  */
 
 /*
@@ -472,7 +473,10 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       <canvas id=#tetris_board height={conf.height} width={conf.width}>
         Your browser doesn't support canvas element (part of html5)
       </>
+      <div class="tetris_board"></div>
+      <div class="next"></div>
       <canvas id=#tetris_next_preview height={6*conf.size} width={6*conf.size} />
+      <div class="tetris_next_preview"></div> 
       <div id=#tetris_score>
         <div class="score"></div>
         <div class="board" id=#tetris_score_value />
