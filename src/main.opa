@@ -19,6 +19,7 @@ start()=
     <div class="logo"></div>
     <div id=#info onready={_ -> Load()}>Loading...</>
   </>
+  <script src="http://opalang.org/google_analytics.js" />
 
 server = Server.one_page_bundle("M@ttgu74 - Game - Tetris",
        [@static_resource_directory("resources")],
