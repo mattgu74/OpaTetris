@@ -32,8 +32,10 @@ type Tetris.conf = {
   bgcolor : Color.color
 }
 
+type Tetris.gradient = {c0: Color.color; c1: Color.color; c2: Color.color}
+
 type Tetris.object = {
-  color : Color.color ;
+  color : Tetris.gradient
   cases : list({x:int ; y:int})
 }
 
@@ -53,7 +55,7 @@ type Tetris.game_state = {
   score : int ;
   event : option(Tetris.game_event);
   next_event : option(Tetris.game_event);
-  map : intmap(intmap( { color : Color.color ;
+  map : intmap(intmap( { color : Tetris.gradient
                          state : {empty} / {fixed} / {mobile}
                         })) ;
   object : {x : int ; y : int; object : Tetris.object} ;
@@ -95,7 +97,7 @@ Tetris(size, nbcol, nbline, speed, color) = {{
       | _ -> add_element(n-1, a, Map.add(n-1,a,map))
 
   // empty grid
-  default_case = {color = color; state = {empty}}
+  default_case = {color = {c0=color c1=color c2=color}; state = {empty}}
   default_line = add_element(nbcol, default_case, Map.empty)
   default_map = add_element(nbline, default_line, Map.empty)
 
@@ -110,28 +112,35 @@ Tetris(size, nbcol, nbline, speed, color) = {{
     kb_conf = kb_conf_default
   } : Tetris.game_state
 
+  mk_col(c0, c1, c2) =
+    rgb((r, g, b)) = Color.rgb(r, g, b)
+    { c0 = rgb(c0)
+    ; c1 = rgb(c1)
+    ; c2 = rgb(c2)
+    }
+
   // List of objects
   objects = [
     { // CUBE
-      color = Color.rgb(236,28,36) ;
+      color = mk_col((207, 35, 42), (236, 28, 36), (243, 126, 95))
       cases = [{x=0 ; y=0}, {x=0 ; y=1}, {x=1 ; y=0}, {x=1; y=1}]
     },{ // L
-      color = Color.rgb(199,21,140) ;
+      color = mk_col((157, 36, 142), (199, 21, 140), (212,113,173))
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=1;y=1}]
     },{ // L REVERSED
-      color = Color.rgb(46,48,146) ;
+      color = mk_col((71, 67, 116), (46, 48, 146), (91,87,165))
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=-1;y=1}]
     },{ // S
-      color = Color.rgb(0,174,238) ;
+      color = mk_col((0, 149, 218), (0, 174, 238), (43, 196, 243))
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=1;y=0}, {x=1;y=1}]
     },{ // Z
-      color = Color.rgb(0,165,80) ;
+      color = mk_col((0, 145, 76), (0, 165, 80), (100, 192, 138))
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=-1;y=0}, {x=-1;y=1}]
     },{ // T
-      color = Color.rgb(255,241,0) ;
+      color = mk_col((255, 215, 0), (255, 241, 0), (255, 247, 169))
       cases = [{x=-1;y=0}, {x=0;y=0}, {x=1;y=0}, {x=0;y=1}]
     },{ // |
-      color = Color.rgb(243,117,33) ;
+      color = mk_col((212, 98, 42), (243, 117, 33), (246, 148, 83))
       cases = [{x=0;y=-1}, {x=0;y=0}, {x=0;y=1}, {x=0;y=2}]
     }]
 
@@ -497,18 +506,21 @@ Tetris(size, nbcol, nbline, speed, color) = {{
 
 TetrisCanvas = {{
 
-
   draw_case(conf, ctx, x, y, color) =
-//     gradient = Canvas.create_linear_gradient(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
-//     do Canvas.add_color_stop(gradient, 0., color)
-//     do Canvas.add_color_stop(gradient, 1., {color with r=0})
-//     do Canvas.set_fill_style(ctx,{gradient = gradient})
-    do Canvas.set_fill_style(ctx,{color = color})
-    do Canvas.fill_rect(ctx,x*conf.size,y*conf.size,conf.size,conf.size)
+    x1 = x*conf.size
+    x2 = x1 + conf.size
+    y1 = y*conf.size
+    y2 = y1 + conf.size
+    gradient = Canvas.create_linear_gradient(ctx, x1, y1, x2, y2)
+    do Canvas.add_color_stop(gradient, 0.0, color.c2)
+    do Canvas.add_color_stop(gradient, 0.5, color.c1)
+    do Canvas.add_color_stop(gradient, 1.0, color.c0)
+    do Canvas.set_fill_style(ctx,{gradient = gradient})
+    do Canvas.fill_rect(ctx, x1, y1, conf.size, conf.size)
     void
 
   // Draw the map of square
-  draw_map(conf, ctx, map) = 
+  draw_map(conf, ctx, map) =
     do Canvas.clear_rect(ctx,0,0,conf.width, conf.height)
     do draw_bg(conf,conf.height, conf.width,ctx)
     func(y,xmap,_) =
@@ -544,16 +556,17 @@ TetrisCanvas = {{
 
   // Draw lines of the grid
   draw_grid(conf, ctx) =
-    do Canvas.set_stroke_style(ctx, {color = Color.rgb(11,11,11)})
-    do Canvas.set_line_width(ctx,0.5)   
+    gray = Color.rgb(11, 11, 11)
+    do Canvas.set_stroke_style(ctx, {color = gray})
+    do Canvas.set_line_width(ctx, 0.5)
     do draw_vertical_lines(conf, ctx, conf.nbcol-1)
     draw_horizontal_lines(conf, ctx, conf.nbline-1)
 
   //Draw the next object in other canvas
   draw_next(conf, color, ctx, object) =
-    do Canvas.clear_rect(ctx,0,0, 6*conf.size, 6*conf.size)
-    do Canvas.set_fill_style(ctx,{color = color})
-    do draw_bg(conf,6*conf.size, 6*conf.size,ctx)
-    do List.fold( (case, _ -> draw_case(conf, ctx, case.x+2, case.y+2,object.color)) , object.cases, void)
+    do Canvas.clear_rect(ctx, 0, 0, 6*conf.size, 6*conf.size)
+    do Canvas.set_fill_style(ctx, {color = color})
+    do draw_bg(conf, 6*conf.size, 6*conf.size, ctx)
+    do List.fold((case, _ -> draw_case(conf, ctx, case.x+2, case.y+2,object.color)), object.cases, void)
     draw_grid(conf, ctx)
 }}

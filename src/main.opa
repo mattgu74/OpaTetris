@@ -8,7 +8,7 @@
 import mattgu74.tetris
 
 conf()=
- myTetris = Tetris(25, 10, 20, 250, Color.rgb(31,31,31))
+ myTetris = Tetris(25, 10, 20, 250, Color.rgb(31, 31, 31))
  myTetris.init(#game)
 
 @client Load()=
