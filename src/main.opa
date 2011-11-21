@@ -26,9 +26,9 @@ start()=
       <div id=#info onready={_ -> Load()}>Loading...</>
   </>
   <div class="footer">
-      <span><a href="http://blog.opalang.org/2011/11/spotlight-on-opa-app-opatetris-by.html">About the app</a></span> • 
-      <span><a href="http://github.com/mattgu74/OpaTetris">Fork on GitHub</a></span> • 
-      <span><a href="https://opalang.org">Built with <img src="resources/opa-logo-small.png" alt="Opa"/></a></span>
+      <span><a target="_blank" href="http://blog.opalang.org/2011/11/spotlight-on-opa-app-opatetris-by.html">About the app</a></span> • 
+      <span><a target="_blank" href="http://github.com/mattgu74/OpaTetris">Fork on GitHub</a></span> • 
+      <span><a target="_blank" href="https://opalang.org">Built with <img src="resources/opa-logo-small.png" alt="Opa"/></a></span>
   </>
   <script src="http://opalang.org/google_analytics.js" />
 
